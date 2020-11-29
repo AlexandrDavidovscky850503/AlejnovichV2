@@ -5,6 +5,7 @@
 #include <cstring>
 #include <algorithm>
 #include <fstream>
+#include <string>
 using namespace std;
 
 //        cout << "Пункт отбытия: " << on_dest << endl;
@@ -66,9 +67,11 @@ public:
         this->on_dest = on_dest;
         this->destination = destination;
     }
+    void set_destination(string destination) { this->destination = destination; }
     void set_price(int price){ this->price = price;}
     void set_date(string date) { this->date = date; }
-    void set_duration(string time) { this->time = time; }
+    void set_time(string time) { this->time = time; }
+    void set_start(string start) { this->on_dest = start; }
 
     double get_price() { return this->price;}
     string get_date() { return this->date;}
@@ -107,6 +110,17 @@ class DataBase {
     string fileName;
     vector<Ticket> currentTickets;
 
+    string deleteSpaises(string msg) {
+        for (int i = 0; i < msg.size(); i++) 
+            if (msg.at(i) == ' ')msg.at(i) = '~';
+        return msg;
+    }
+    string addSpaises(string msg) {
+        for (int i = 0; i < msg.size(); i++)
+            if (msg.at(i) == '~')msg.at(i) = ' ';
+        return msg;
+    }
+
 public:
 
     DataBase(string fileName) {
@@ -144,9 +158,41 @@ public:
         return false;
     }
 
-    void getFromFile() {}
+    void getFromFile() {
+        ifstream fout(fileName);
+        while (1) {
+            Ticket temp;
+            for (int i = 0; i < 5; i++) {
+                string s;
+                fout >> s;
+                if (fout.eof())break;
+                switch (i) {
+                    case 0: temp.set_start(addSpaises(s)); break;
+                    case 1: temp.set_destination(addSpaises(s)); break;
+                    case 2: temp.set_time(s); break;
+                    case 3: temp.set_date(s); break;
+                    case 4: temp.set_price(stod(s)); break;
+                    default:break;
+                }
+            }
+            if (fout.eof())break;
+            add_Ticket(temp);
+        }
+        fout.close();
+    }
 
-    void setToFile() {}
+    void loadToFile() {
+        ofstream fin(fileName);
+        for (auto i : currentTickets) {
+            fin << deleteSpaises(i.get_start()) << ' ';
+            fin << deleteSpaises(i.get_destination()) << ' ';
+            fin << i.get_time() << ' ';
+            fin << i.get_date() << ' ';
+            fin << to_string(i.get_price()) << ' ';
+            fin << '\n';
+        }
+        fin.close();
+    }
 
     void show_all_tickets() {
         for (auto i : currentTickets) { cout << i; }
@@ -240,42 +286,38 @@ public:
 
 int main() {
     setlocale(LC_ALL, "rus");
-    DataBase f("1");
+    DataBase f("DataBase.txt");
+    f.createNew();
     vector<Ticket> tickets(5);
     tickets[0].set_direction("Canada","USA");
     tickets[0].set_date("16.09.2020");
-    tickets[0].set_duration("00.02.10");
+    tickets[0].set_time("00.02.10");
     tickets[0].set_price(235);
 
     tickets[1].set_direction("USA","England");
     tickets[1].set_date("13.09.2020");
-    tickets[1].set_duration("10.22.10");
+    tickets[1].set_time("10.22.10");
     tickets[1].set_price(140);
 
     tickets[2].set_direction("England", "Canada");
     tickets[2].set_date("16.09.2020");
-    tickets[2].set_duration("01.00.40");
+    tickets[2].set_time("01.00.40");
     tickets[2].set_price(120);
 
     tickets[3].set_direction("Italy", "Canada");
     tickets[3].set_date("20.09.2020");
-    tickets[0].set_duration("23.02.10");
+    tickets[0].set_time("23.02.10");
     tickets[3].set_price(98);
 
     tickets[4].set_direction("New Zeland", "USA");
     tickets[4].set_date("25.09.2020");
-    tickets[4].set_duration("04.04.04");
+    tickets[4].set_time("04.04.04");
     tickets[4].set_price(480);
-    //show_all_tickets(tickets);
-    //cout << "===================================================" << endl; 
-    //buy_ticket(tickets[0], tickets);
-    //sort(tickets.begin(), tickets.end());
 
     f.setTickets(tickets);
-    //f.delete_Ticket(tickets[4]);
-    f.show_all_tickets();
-    f.dataSort();
-    cout << "===================================================" << endl;
+    f.loadToFile();
+    f.getFromFile();
+    cout << "===================================================\n";
     f.show_all_tickets();
     return 0;
 }
